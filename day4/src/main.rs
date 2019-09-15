@@ -18,6 +18,7 @@ fn main() -> Result<()> {
     let gid_to_mins_asleep = map_gid_to_mins_asleep(&input)?;
 
     part1(&gid_to_mins_asleep)?;
+    part2(&gid_to_mins_asleep)?;
     Ok(())
 }
 
@@ -32,6 +33,26 @@ fn part1(gid_to_mins_asleep: &HashMap<u32, Vec<u32>>) -> Result<()> {
     println!("{:?}", min);
     println!("{:?}", sleepy_person);
     println!("{:?}", min * sleepy_person);
+    Ok(())
+}
+
+fn part2(gid_to_mins_asleep: &HashMap<u32, Vec<u32>>) -> Result<()> {
+    let mut gid_min: HashMap<u32, (u32, u32)> = HashMap::new();
+    for (&gid, mins_asleep) in gid_to_mins_asleep.iter() {
+        let mut mins_count_map: HashMap<u32, u32> = HashMap::new();
+        for &min in mins_asleep.iter() {
+            let counter = mins_count_map.entry(min).or_insert(0);
+            *counter += 1;
+        }
+
+        let (&min, &count) = mins_count_map.iter().max_by(|(_, v1), (_, v2)| v1.cmp(v2)).unwrap();
+        gid_min.entry(gid).or_insert((min, count));
+    }
+    let (gid, (minute, _)) = gid_min.iter().max_by(|(_, (_, count1)), (_, (_, count2))| count1.cmp(count2)).unwrap();
+
+    println!("gid: {}", gid);
+    println!("minute: {}", minute);
+    println!("result {}", gid * minute);
     Ok(())
 }
 
