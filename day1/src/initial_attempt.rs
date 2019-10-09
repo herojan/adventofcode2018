@@ -5,7 +5,7 @@
 //
 //
 //fn main() -> Result<(), Box<Error>> {
-//    let f = File::open("frequencies.txt")?;
+//    let f = File::open("input.txt")?;
 //    let f = BufReader::new(f);
 //    let sum = f.lines().try_fold(
 //        0,

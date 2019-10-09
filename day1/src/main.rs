@@ -6,7 +6,7 @@ type Result<T> = ::std::result::Result<T, Box<dyn ::std::error::Error>>;
 
 fn main() -> Result<()> {
     let mut input = String::new();
-    File::open("frequencies.txt")?.read_to_string(&mut input)?;
+    File::open("input.txt")?.read_to_string(&mut input)?;
 
     part1(&input)?;
     part2(&input)?;
