@@ -7,13 +7,34 @@ fn main() -> Result<()> {
     let mut input = String::new();
     File::open("input.txt")?.read_to_string(&mut input)?;
     let line = input.lines().next().unwrap();
-    part1(&line)?;
+    part1(line)?;
     Ok(())
 }
 
 fn part1(line: &str) -> Result<()> {
-    let mut bytes = line.as_bytes().to_vec();
+    let mut shortest_length = u32::max_value();
+    for c in 65..91 {
+        let mut bytes = line.as_bytes().to_vec();
+        let mut i = 0;
+        while i < bytes.len() - 1 {
+            let b = *bytes.get(i).unwrap() as usize;
+            if b == c || b == (c+32) {
+                bytes.remove(i);
+            } else {
+                i += 1;
+            }
+        }
+        let length = full_reaction(bytes) as u32;
+        if length < shortest_length {
+            shortest_length = length
+        }
+    }
 
+    println!("{}", shortest_length);
+    Ok(())
+}
+
+fn full_reaction(mut bytes: Vec<u8>) -> usize {
     loop {
         let mut reacted = false;
         let mut i = 0;
@@ -35,9 +56,7 @@ fn part1(line: &str) -> Result<()> {
         }
     }
 
-    println!("{}", String::from_utf8(bytes).unwrap().len());
-
-    Ok(())
+    return String::from_utf8(bytes).unwrap().len();
 }
 
 fn reacts(b1: &u8, b2: &u8) -> bool {
