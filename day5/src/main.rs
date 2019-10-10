@@ -18,7 +18,7 @@ fn part1(line: &str) -> Result<()> {
         let mut i = 0;
         while i < bytes.len() - 1 {
             let b = *bytes.get(i).unwrap() as usize;
-            if b == c || b == (c+32) {
+            if b == c || b == (c + 32) {
                 bytes.remove(i);
             } else {
                 i += 1;
