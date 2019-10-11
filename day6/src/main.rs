@@ -11,7 +11,7 @@ use regex::Regex;
 use std::collections::HashMap;
 
 type Result<T> = ::std::result::Result<T, Box<dyn ::std::error::Error>>;
-#[derive(Eq, PartialEq, Debug)]
+#[derive(Clone, Copy, Hash, Eq, PartialEq, Debug)]
 struct Point {
     x: i32,
     y: i32,
@@ -21,7 +21,55 @@ struct Point {
 struct Grid {
     min_point: Point,
     max_point: Point,
-    grid_points: Vec<Point>
+    anchors: Vec<Point>,
+    grid_points: Vec<Point>,
+}
+
+impl Grid {
+    fn map_anchors_to_points(&self) -> HashMap<Point, Vec<Point>> {
+        let mut anchor_to_num_points: HashMap<Point, Vec<Point>> = HashMap::new();
+
+        for grid_point in &self.grid_points {
+            let maybe_anchor = self.find_closest_anchor(grid_point);
+            if let Some(closest_anchor) = maybe_anchor {
+                let points = anchor_to_num_points.entry(closest_anchor).or_insert(vec![]);
+                points.push(*grid_point);
+            }
+        }
+
+        anchor_to_num_points.retain(|_, v| self.finite_close_points(v));
+
+        return anchor_to_num_points;
+    }
+
+    fn finite_close_points(&self, points: &Vec<Point>) -> bool {
+        return points.iter().all(|point| {
+            !(point.x == self.min_point.x)
+                && !(point.x == self.max_point.x)
+                && !(point.y == self.min_point.y)
+                && !(point.y == self.max_point.y)
+        });
+    }
+
+    fn find_closest_anchor(&self, grid_point: &Point) -> Option<Point> {
+        let (mut closest_anchor, mut more_than_one) = (self.anchors[0], false);
+
+        for &anchor in &self.anchors[1..] {
+            let shortest_distance = manhattan_distance(&closest_anchor, &grid_point);
+            let distance = manhattan_distance(&anchor, &grid_point);
+            if distance == shortest_distance {
+                more_than_one = true
+            } else if distance < shortest_distance {
+                closest_anchor = anchor;
+                more_than_one = false
+            }
+        }
+        if more_than_one {
+            return None;
+        } else {
+            return Some(closest_anchor);
+        }
+    }
 }
 
 fn main() -> Result<()> {
@@ -34,42 +82,25 @@ fn main() -> Result<()> {
 
 fn part1(input: &str) -> Result<()> {
     let anchors: Vec<Point> = input.lines().filter_map(|line| line.parse().ok()).collect();
-    let grid = build_grid(&anchors);
-    let mut anchor_to_num_points: HashMap<u32, u32> = HashMap::new();
-    for grid_point in grid.grid_points.iter() {
-        let maybe_closest_anchor = find_closest_anchor(grid_point, &anchors);
-        if let Some(closest_anchor) = maybe_closest_anchor {
-            let entry = anchor_to_num_points.entry(closest_anchor).or_insert(0);
-            *entry += 1;
-        }
-    }
-    println!("{:?}", anchor_to_num_points.values().max().unwrap());
+    let grid = build_grid(anchors);
+
+    let anchor_to_num_points = grid.map_anchors_to_points();
+    println!(
+        "{:?}",
+        anchor_to_num_points
+            .iter()
+            .map(|(_, v)| v.len())
+            .max()
+            .unwrap()
+    );
     Ok(())
 }
 
-fn find_closest_anchor(grid_point: &Point, anchors: &Vec<Point>) -> Option<u32> {
-    let mut shortest_distance = u32::max_value();
-    let mut current_anchor = None;
-
-    for i in 0..anchors.len() {
-        let anchor = anchors.get(i).unwrap();
-        let distance = manhattan_distance(anchor, grid_point);
-        if distance == shortest_distance {
-            return None;
-        } else if distance < shortest_distance {
-            current_anchor = Some(i as u32);
-            shortest_distance = distance;
-        }
-    }
-
-    return current_anchor
-}
-
 fn manhattan_distance(point1: &Point, point2: &Point) -> u32 {
-    return ((point1.x - point2.x).abs() + (point1.y - point2.y).abs()) as u32
+    return ((point1.x - point2.x).abs() + (point1.y - point2.y).abs()) as u32;
 }
 
-fn build_grid(anchors: &Vec<Point>) -> Grid {
+fn build_grid(anchors: Vec<Point>) -> Grid {
     let mut min_y = i32::max_value();
     let mut min_x = i32::max_value();
     let mut max_y = 0;
@@ -90,17 +121,18 @@ fn build_grid(anchors: &Vec<Point>) -> Grid {
         }
     }
 
-    let mut grid : Vec<Point> = vec![];
-    for y in min_y..(max_y+1) {
-        for x in min_x..(max_x+1) {
-            grid.push(Point{x, y})
+    let mut grid: Vec<Point> = vec![];
+    for y in min_y..(max_y + 1) {
+        for x in min_x..(max_x + 1) {
+            grid.push(Point { x, y })
         }
     }
 
-    return Grid{
-        min_point: Point {x: min_x, y: min_y},
-        max_point: Point {x: max_x, y: max_y},
-        grid_points: grid
+    return Grid {
+        min_point: Point { x: min_x, y: min_y },
+        max_point: Point { x: max_x, y: max_y },
+        anchors,
+        grid_points: grid,
     };
 }
 
