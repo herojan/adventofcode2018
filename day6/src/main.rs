@@ -42,6 +42,26 @@ impl Grid {
         return anchor_to_num_points;
     }
 
+    fn points_with_distance_less_than(&self, num: u32) -> u32{
+        let mut count = 0;
+        for grid_point in &self.grid_points {
+            if self.total_distance(grid_point) < num {
+                count +=1;
+            }
+        }
+
+        return count;
+    }
+
+    fn total_distance(&self, point: &Point) -> u32 {
+        let mut sum = 0;
+        for anchor in &self.anchors {
+            sum += manhattan_distance(point, anchor);
+        }
+
+        return sum;
+    }
+
     fn finite_close_points(&self, points: &Vec<Point>) -> bool {
         return points.iter().all(|point| {
             !(point.x == self.min_point.x)
@@ -77,6 +97,7 @@ fn main() -> Result<()> {
     File::open("input.txt")?.read_to_string(&mut input)?;
 
     part1(&input)?;
+    part2(&input)?;
     Ok(())
 }
 
@@ -93,6 +114,15 @@ fn part1(input: &str) -> Result<()> {
             .max()
             .unwrap()
     );
+    Ok(())
+}
+
+fn part2(input: &str) -> Result<()> {
+    let anchors: Vec<Point> = input.lines().filter_map(|line| line.parse().ok()).collect();
+    let grid = build_grid(anchors);
+
+    let region_size = grid.points_with_distance_less_than(10000);
+    println!("{}", region_size);
     Ok(())
 }
 
