@@ -9,21 +9,19 @@ fn main() -> Result<()> {
     let mut input = String::new();
     File::open("input.txt")?.read_to_string(&mut input)?;
     let line = input.lines().next().unwrap();
-    part1(&line)?;
+    let root: Node = line.parse()?;
+    part1(&root)?;
+    part2(&root)?;
     Ok(())
 }
 
-fn part1(line: &str) -> Result<()> {
-    let root: Node = line.parse()?;
-    let mut children = root.children;
-    let mut all_metadata = root.metadata;
-    while !children.is_empty() {
-        let child = children.remove(0);
-        all_metadata.extend(child.metadata);
-        children.extend(child.children);
-    }
-    let sum: u32 = all_metadata.iter().sum();
-    println!("{:?}", sum);
+fn part1(root: &Node) -> Result<()> {
+    println!("{:?}", root.sum_metadata());
+    Ok(())
+}
+
+fn part2(root: &Node) -> Result<()> {
+    println!("{:?}", root.calculate_value());
     Ok(())
 }
 
@@ -31,6 +29,31 @@ fn part1(line: &str) -> Result<()> {
 struct Node {
     children: Vec<Node>,
     metadata: Vec<u32>,
+}
+
+impl Node {
+    fn calculate_value(&self) -> u32 {
+        let mut value: u32 = 0;
+        if self.children.is_empty() {
+            let sum: u32 = self.metadata.iter().sum();
+            value += sum;
+        } else {
+            for m in &self.metadata {
+                let child: Option<&Node> = self.children.get((*m-1) as usize);
+                value += child.map(|c| c.calculate_value()).unwrap_or(0);
+            }
+        }
+
+        return value;
+    }
+
+    fn sum_metadata(&self) -> u32 {
+        let mut sum = self.metadata.iter().sum();
+        for child in &self.children {
+            sum += child.sum_metadata();
+        }
+        return sum;
+    }
 }
 
 impl FromStr for Node {
